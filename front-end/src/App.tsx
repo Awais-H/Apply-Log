@@ -78,6 +78,7 @@ export default function App({ onLogout }: AppProps) {
   const [editingApp, setEditingApp] = useState<JobApplication | null>(null)
   const [showMoveModal, setShowMoveModal] = useState(false)
   const [expandedCards, setExpandedCards] = useState<string[]>([])
+  const [searchQuery, setSearchQuery] = useState("")
 
   const [showEditModal, setShowEditModal] = useState(false)
   const [editingAppForEdit, setEditingAppForEdit] = useState<JobApplication | null>(null)
@@ -210,7 +211,13 @@ export default function App({ onLogout }: AppProps) {
   }
 
   const getApplicationsByStatus = (status: JobApplication["status"]) => {
-    return applications.filter((app) => app.status === status)
+    const byStatus = applications.filter((app) => app.status === status)
+    const q = searchQuery.trim().toLowerCase()
+    if (q.length === 0) return byStatus
+    return byStatus.filter((app) => {
+      const haystack = `${app.company} ${app.position} ${app.location ?? ""}`.toLowerCase()
+      return haystack.includes(q)
+    })
   }
 
   const openNotesModal = (app: JobApplication) => {
@@ -244,7 +251,10 @@ export default function App({ onLogout }: AppProps) {
             <input
               type="text"
               placeholder="Search jobs..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
               className="bg-slate-700 px-4 py-2 rounded-lg w-80 pt-2 pl-3.5"
+              aria-label="Search jobs"
             />
           </div>
         </div>
