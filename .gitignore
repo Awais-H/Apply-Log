@@ -1,0 +1,25 @@
+# Node modules
+back-end/node_modules/
+front-end/node_modules/
+
+# Build outputs
+front-end/.next/
+
+# Logs
+*.log
+
+# Dependency lock files
+back-end/package-lock.json
+front-end/package-lock.json
+front-end/pnpm-lock.yaml
+
+# Environment files
+.env
+.env.*
+
+# OS generated files
+.DS_Store
+Thumbs.db
+
+# Misc
+*.local
