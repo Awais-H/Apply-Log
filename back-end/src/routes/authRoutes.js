@@ -52,16 +52,28 @@ router.post('/register', (req, res) => {
         console.log(err.message)
         res.sendStatus(503)
     }
-
-    console.log(firstName, lastName, email, password, cpassword, hashedPassword)
 })
 
 router.post('/login', (req, res) => {
-    try{
+    const { email, password } = req.body;
+    try {
+        const getUser = db.prepare(`SELECT * FROM users WHERE email = ?`)
+        const user = getUser.get(email)
+        //If we cannot find user associated with that username
+        if (!user) { return res.status(404).send({ message: "User not found" }) }
 
+        const passwordValid = bcrypt.compareSync(password, user.password)
+        if (!passwordValid) { return res.status(401).send({ message: "Invalid Password" }) }
+        console.log(user)
+        //Then we have a succesful authentication
+        const token = jwt.sign({ id: user.id }, process.env.JWT_SECRET, {
+            expiresIn: '24h'
+        })
+        res.json({ token })
     }
-    catch{
-      
+    catch (err) {
+        console.log(err.message)
+        res.sendStatus(503)
     }
 })
 
