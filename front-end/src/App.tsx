@@ -2,6 +2,7 @@
 import type React from "react"
 import { useState } from "react"
 import { Plus, X, ChevronDown, FileText } from 'lucide-react'
+import { API_BASE } from './api'
 
 interface JobApplication {
   id: string
@@ -131,12 +132,11 @@ export default function App({ onLogout }: AppProps) {
     setShowEditModal(true)
   }
 
-  const handleEditSubmit = (e: React.FormEvent) => {
+  const handleEditSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!editingAppForEdit) return
 
-    const updatedApp: JobApplication = {
-      ...editingAppForEdit,
+    const payload = {
       position: editFormData.position,
       company: editFormData.company,
       salary: editFormData.salary,
@@ -146,35 +146,71 @@ export default function App({ onLogout }: AppProps) {
       interviewDeadline: editFormData.interviewDeadline || undefined,
     }
 
-    setApplications(applications.map((app) => (app.id === editingAppForEdit.id ? updatedApp : app)))
+    try {
+      const res = await fetch(`${API_BASE}/applications/${editingAppForEdit.id}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(localStorage.getItem('token') ? { Authorization: `Bearer ${localStorage.getItem('token')}` } : {}),
+        },
+        body: JSON.stringify(payload),
+      })
+      const data = await res.json().catch(() => ({}))
+      if (!res.ok) throw new Error(data?.message ?? 'Update failed')
 
-    setShowEditModal(false)
-    setEditingAppForEdit(null)
+      const updatedApp: JobApplication = { ...editingAppForEdit, ...payload }
+      setApplications(applications.map((app) => (app.id === editingAppForEdit.id ? updatedApp : app)))
+      setShowEditModal(false)
+      setEditingAppForEdit(null)
+    } catch (err) {
+      console.error(err)
+      alert((err as Error).message)
+    }
   }
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    const newApp: JobApplication = {
-      id: Date.now().toString(),
-      position: formData.position,
-      company: formData.company,
-      salary: formData.salary,
-      employmentType: formData.employmentType,
-      location: formData.location,
-      applicationDeadline: formData.applicationDeadline,
-      status: "applied",
+    try {
+      const payload = {
+        position: formData.position,
+        company: formData.company,
+        salary: formData.salary,
+        employmentType: formData.employmentType,
+        location: formData.location,
+        applicationDeadline: formData.applicationDeadline,
+        interviewDeadline: formData.interviewDeadline || undefined,
+        status: 'applied' as const,
+      }
+      const res = await fetch(`${API_BASE}/applications`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(localStorage.getItem('token') ? { Authorization: `Bearer ${localStorage.getItem('token')}` } : {}),
+        },
+        body: JSON.stringify(payload),
+      })
+      const data = await res.json()
+      if (!res.ok) throw new Error(data?.message ?? 'Create failed')
+
+      const created: JobApplication = {
+        id: data?.id ?? Date.now().toString(),
+        ...payload,
+      }
+      setApplications([...applications, created])
+      setFormData({
+        position: '',
+        company: '',
+        salary: '',
+        employmentType: 'fulltime',
+        location: '',
+        applicationDeadline: '',
+        interviewDeadline: '',
+      })
+      setShowModal(false)
+    } catch (err) {
+      console.error(err)
+      alert((err as Error).message)
     }
-    setApplications([...applications, newApp])
-    setFormData({
-      position: "",
-      company: "",
-      salary: "",
-      employmentType: "fulltime",
-      location: "",
-      applicationDeadline: "",
-      interviewDeadline: "",
-    })
-    setShowModal(false)
   }
 
   const moveApplication = (appId: string, newStatus: JobApplication["status"]) => {
@@ -202,8 +238,23 @@ export default function App({ onLogout }: AppProps) {
     setEditingApp(null)
   }
 
-  const deleteApplication = (appId: string) => {
-    setApplications(prevApplications => prevApplications.filter((app) => app.id !== appId))
+  const deleteApplication = async (appId: string) => {
+    try {
+      const res = await fetch(`${API_BASE}/applications/${appId}`, {
+        method: 'DELETE',
+        headers: {
+          ...(localStorage.getItem('token') ? { Authorization: `Bearer ${localStorage.getItem('token')}` } : {}),
+        },
+      })
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}))
+        throw new Error(data?.message ?? 'Delete failed')
+      }
+      setApplications(prevApplications => prevApplications.filter((app) => app.id !== appId))
+    } catch (err) {
+      console.error(err)
+      alert((err as Error).message)
+    }
   }
 
   const updateApplicationNotes = (appId: string, notes: string) => {

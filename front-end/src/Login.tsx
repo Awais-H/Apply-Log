@@ -4,6 +4,7 @@ import { useState } from "react"
 import { FileText } from 'lucide-react'
 import App from './App'
 import SignUp from './SignUp'
+import { API_BASE } from './api'
 
 export default function Login() {
   const [currentPage, setCurrentPage] = useState<'login' | 'signup' | 'app'>('login')
@@ -19,12 +20,25 @@ export default function Login() {
     })
   }
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    // Handle login logic here
-    console.log("Login attempt:", formData)
-    // Navigate to app after successful login
-    setCurrentPage('app')
+    try {
+      const res = await fetch(`${API_BASE}/auth/login`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: formData.email, password: formData.password }),
+      })
+      const data = await res.json()
+      if (!res.ok) {
+        throw new Error(data?.message ?? 'Login failed')
+      }
+      // Example: store token if provided by backend
+      if (data?.token) localStorage.setItem('token', data.token)
+      setCurrentPage('app')
+    } catch (err) {
+      console.error(err)
+      alert((err as Error).message)
+    }
   }
 
   const handleSignUpSuccess = () => {

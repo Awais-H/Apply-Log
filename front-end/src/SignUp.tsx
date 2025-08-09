@@ -2,6 +2,7 @@
 import type React from "react"
 import { useState } from "react"
 import { FileText, ArrowLeft } from 'lucide-react'
+import { API_BASE } from './api'
 
 interface SignUpProps {
   onSignUpSuccess: () => void
@@ -53,14 +54,28 @@ export default function SignUp({ onSignUpSuccess, onBackToLogin }: SignUpProps) 
     return newErrors.length === 0
   }
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    
-    if (validateForm()) {
-      // Handle sign up logic here
-      console.log("Sign up attempt:", formData)
-      // Navigate back to login after successful signup
+    if (!validateForm()) return
+    try {
+      const res = await fetch(`${API_BASE}/auth/register`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          firstName: formData.firstName,
+          lastName: formData.lastName,
+          email: formData.email,
+          password: formData.password,
+        }),
+      })
+      const data = await res.json()
+      if (!res.ok) {
+        throw new Error(data?.message ?? 'Registration failed')
+      }
       onSignUpSuccess()
+    } catch (err) {
+      console.error(err)
+      alert((err as Error).message)
     }
   }
 

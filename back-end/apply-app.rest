@@ -1,17 +1,23 @@
-### TEST GET/ WEBSITE
-
-GET http://localhost:8383
-
-### DATA ENDPOINT
-GET http://localhost:8383/api/data
-
-###DATA ENDPOINT FOR ADDING USER
-POST http://localhost:8383/api/data
+###
+GET http://localhost:5000
+###
+POST http://localhost:5000/auth/register
 Content-Type: application/json
 
 {
-    "name": "John"
+    "firstName":"Awais",
+    "lastName":"Hashar",
+    "email":"a@gmail.com",
+    "password":"123",
+    "cpassword":"123"
 }
 
-###DELETE ENDPOINT
-DELETE http://localhost:8383/api/data
+###
+POST http://localhost:5000/auth/login
+Content-Type: application/json
+
+{
+    "email":"a@gmail.com",
+    "password":"123"
+}
+###
