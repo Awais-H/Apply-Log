@@ -20,4 +20,43 @@ Content-Type: application/json
     "email":"a@gmail.com",
     "password":"123"
 }
-###
+### Fetch all applications
+GET http://localhost:5000/applications
+Authorization: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MSwiaWF0IjoxNzU0Nzk0OTY1LCJleHAiOjE3NTQ4ODEzNjV9.QmpXbhvIutsOUZPCGuygTV0U5R1Us_7MMoiZobtSIQE
+
+### Create new application
+POST http://localhost:5000/applications
+Authorization: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MSwiaWF0IjoxNzU0Nzk0OTY1LCJleHAiOjE3NTQ4ODEzNjV9.QmpXbhvIutsOUZPCGuygTV0U5R1Us_7MMoiZobtSIQE
+Content-Type: application/json
+
+{
+    "position":"SDE",
+    "employment":"full-time", 
+    "company":"Microsoft",
+    "salary":0,
+    "location":"Toronto",
+    "status":"applied",
+    "date":"2025-01-01"
+}
+
+### Update an application PUT
+PUT http://localhost:5000/applications/2
+Authorization: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MSwiaWF0IjoxNzU0Nzk0OTY1LCJleHAiOjE3NTQ4ODEzNjV9.QmpXbhvIutsOUZPCGuygTV0U5R1Us_7MMoiZobtSIQE
+Content-Type: application/json
+
+{
+    "position":"SDE II",
+    "employment":"full-time",
+    "company":"Microsoft",
+    "salary":100,
+    "location":"Toronto",
+    "status":"applied",
+    "date":"2025-01-02"
+}
+
+
+### Delete an application
+DELETE http://localhost:5000/applications/2
+Authorization: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MSwiaWF0IjoxNzU0Nzk0OTY1LCJleHAiOjE3NTQ4ODEzNjV9.QmpXbhvIutsOUZPCGuygTV0U5R1Us_7MMoiZobtSIQE
+
+

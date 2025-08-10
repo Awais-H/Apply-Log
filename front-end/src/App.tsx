@@ -1,6 +1,6 @@
 "use client"
 import type React from "react"
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import { Plus, X, ChevronDown, FileText } from 'lucide-react'
 import { API_BASE } from './api'
 
@@ -22,56 +22,8 @@ interface AppProps {
 }
 
 export default function App({ onLogout }: AppProps) {
-  const [applications, setApplications] = useState<JobApplication[]>([
-    {
-      id: "1",
-      position: "Senior Software Developer",
-      company: "Shopify",
-      salary: "$95,000 CAD",
-      employmentType: "fulltime",
-      location: "Toronto, ON",
-      applicationDeadline: "2024-02-15",
-      status: "applied",
-    },
-    {
-      id: "2",
-      position: "Software Development Engineer",
-      company: "Apple",
-      salary: "$85,000 CAD",
-      employmentType: "fulltime",
-      location: "Toronto, ON",
-      applicationDeadline: "2024-02-20",
-      status: "applied",
-    },
-    {
-      id: "3",
-      position: "Frontend Developer",
-      company: "Wealthsimple",
-      salary: "$75,000 CAD",
-      employmentType: "fulltime",
-      location: "Toronto, ON",
-      interviewDeadline: "2024-02-10",
-      status: "interview",
-    },
-    {
-      id: "4",
-      position: "Full Stack Developer",
-      company: "Mogo",
-      salary: "$80,000 CAD",
-      employmentType: "fulltime",
-      location: "Vancouver, BC",
-      status: "offer",
-    },
-    {
-      id: "5",
-      position: "Software Engineering Intern",
-      company: "BlackBerry",
-      salary: "$25/hour CAD",
-      employmentType: "internship",
-      location: "Waterloo, ON",
-      status: "rejected",
-    },
-  ])
+  const [applications, setApplications] = useState<JobApplication[]>([])
+  const [isLoading, setIsLoading] = useState<boolean>(false)
 
   const [showModal, setShowModal] = useState(false)
   const [showNotesModal, setShowNotesModal] = useState(false)
@@ -103,6 +55,102 @@ export default function App({ onLogout }: AppProps) {
     applicationDeadline: "",
     interviewDeadline: "",
   })
+
+  // Helpers: mapping between client <-> server payloads
+  const normalizeEmploymentToServer = (employmentType: JobApplication["employmentType"]): string => {
+    switch (employmentType) {
+      case "fulltime":
+        return "full-time"
+      case "parttime":
+        return "part-time"
+      case "internship":
+        return "intern"
+      default:
+        return "full-time"
+    }
+  }
+
+  const normalizeEmploymentToClient = (employment: string): JobApplication["employmentType"] => {
+    switch (employment) {
+      case "full-time":
+        return "fulltime"
+      case "part-time":
+        return "parttime"
+      case "intern":
+        return "internship"
+      default:
+        return "fulltime"
+    }
+  }
+
+  const toAuthHeader = (): Record<string, string> => {
+    const token = localStorage.getItem('token')
+    return token ? { Authorization: token } : {}
+  }
+
+  const today = (): string => {
+    const d = new Date()
+    const month = String(d.getMonth() + 1).padStart(2, '0')
+    const day = String(d.getDate()).padStart(2, '0')
+    return `${d.getFullYear()}-${month}-${day}`
+  }
+
+  const mapServerToClient = (row: any): JobApplication => ({
+    id: String(row.id),
+    position: row.position ?? "",
+    company: row.company ?? "",
+    salary: row.salary != null ? String(row.salary) : "",
+    employmentType: normalizeEmploymentToClient(row.employment ?? "full-time"),
+    location: row.location ?? "",
+    applicationDeadline: row.status === 'applied' ? row.date ?? undefined : undefined,
+    interviewDeadline: row.status === 'interview' ? row.date ?? undefined : undefined,
+    status: (row.status ?? 'applied') as JobApplication["status"],
+    notes: undefined,
+  })
+
+  const mapClientToServer = (app: Partial<JobApplication> & { status: JobApplication["status"] }) => {
+    const employment = normalizeEmploymentToServer(app.employmentType ?? "fulltime")
+    const salaryNumber = (() => {
+      if (app.salary == null) return 0
+      const parsed = parseInt(String(app.salary).replace(/[^0-9-]/g, ''), 10)
+      return Number.isFinite(parsed) ? parsed : 0
+    })()
+    const date = app.applicationDeadline || app.interviewDeadline || today()
+    return {
+      position: app.position ?? "",
+      employment,
+      company: app.company ?? "",
+      salary: salaryNumber,
+      location: app.location ?? "",
+      status: app.status,
+      date,
+    }
+  }
+
+  const fetchApplications = async () => {
+    setIsLoading(true)
+    try {
+      const res = await fetch(`${API_BASE}/applications`, {
+        headers: {
+          ...toAuthHeader(),
+        },
+      })
+      const data = await res.json().catch(() => [])
+      if (!res.ok) throw new Error((data as any)?.message ?? 'Failed to fetch applications')
+      const normalized = Array.isArray(data) ? data.map(mapServerToClient) : []
+      setApplications(normalized)
+    } catch (err) {
+      console.error(err)
+      setApplications([])
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+  useEffect(() => {
+    fetchApplications()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     setFormData({
@@ -136,7 +184,7 @@ export default function App({ onLogout }: AppProps) {
     e.preventDefault()
     if (!editingAppForEdit) return
 
-    const payload = {
+    const clientPayload = {
       position: editFormData.position,
       company: editFormData.company,
       salary: editFormData.salary,
@@ -144,21 +192,27 @@ export default function App({ onLogout }: AppProps) {
       location: editFormData.location,
       applicationDeadline: editFormData.applicationDeadline || undefined,
       interviewDeadline: editFormData.interviewDeadline || undefined,
-    }
+      status: editingAppForEdit.status,
+    } as const
+    const payload = mapClientToServer(clientPayload)
 
     try {
       const res = await fetch(`${API_BASE}/applications/${editingAppForEdit.id}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
-          ...(localStorage.getItem('token') ? { Authorization: `Bearer ${localStorage.getItem('token')}` } : {}),
+          ...toAuthHeader(),
         },
-        body: JSON.stringify(payload),
+        body: JSON.stringify(payload as any),
       })
       const data = await res.json().catch(() => ({}))
-      if (!res.ok) throw new Error(data?.message ?? 'Update failed')
+      if (!res.ok) {
+        // proceed to update UI anyway since backend may be WIP
+        console.warn(data?.message ?? 'Update failed, applying optimistic update')
+      }
 
-      const updatedApp: JobApplication = { ...editingAppForEdit, ...payload }
+      const updatedClient = mapServerToClient({ id: editingAppForEdit.id, ...payload })
+      const updatedApp: JobApplication = { ...editingAppForEdit, ...updatedClient }
       setApplications(applications.map((app) => (app.id === editingAppForEdit.id ? updatedApp : app)))
       setShowEditModal(false)
       setEditingAppForEdit(null)
@@ -171,31 +225,30 @@ export default function App({ onLogout }: AppProps) {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     try {
-      const payload = {
+      const clientPayload = {
         position: formData.position,
         company: formData.company,
         salary: formData.salary,
         employmentType: formData.employmentType,
         location: formData.location,
-        applicationDeadline: formData.applicationDeadline,
+        applicationDeadline: formData.applicationDeadline || undefined,
         interviewDeadline: formData.interviewDeadline || undefined,
         status: 'applied' as const,
       }
+      const payload = mapClientToServer(clientPayload)
       const res = await fetch(`${API_BASE}/applications`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          ...(localStorage.getItem('token') ? { Authorization: `Bearer ${localStorage.getItem('token')}` } : {}),
+          ...toAuthHeader(),
         },
-        body: JSON.stringify(payload),
+        body: JSON.stringify(payload as any),
       })
-      const data = await res.json()
-      if (!res.ok) throw new Error(data?.message ?? 'Create failed')
+      const data = await res.json().catch(() => ({} as any))
+      if (!res.ok) throw new Error((data as any)?.message ?? 'Create failed')
 
-      const created: JobApplication = {
-        id: data?.id ?? Date.now().toString(),
-        ...payload,
-      }
+      const createdServer = { id: data?.id ?? Date.now(), ...(data?.id ? data : payload) }
+      const created: JobApplication = mapServerToClient(createdServer)
       setApplications([...applications, created])
       setFormData({
         position: '',
@@ -213,29 +266,32 @@ export default function App({ onLogout }: AppProps) {
     }
   }
 
-  const moveApplication = (appId: string, newStatus: JobApplication["status"]) => {
-    setApplications(
-      applications.map((app) => {
-        if (app.id === appId) {
-          const updatedApp = { ...app, status: newStatus }
+  const moveApplication = async (appId: string, newStatus: JobApplication["status"]) => {
+    const appToUpdate = applications.find(a => a.id === appId)
+    if (!appToUpdate) return
 
-          // Remove application deadline when moving to interview
-          if (newStatus === "interview") {
-            delete updatedApp.applicationDeadline
-          }
-
-          // Remove interview deadline when moving to offer or rejected
-          if (newStatus === "offer" || newStatus === "rejected") {
-            delete updatedApp.interviewDeadline
-          }
-
-          return updatedApp
-        }
-        return app
-      }),
-    )
+    const optimistic = applications.map(app => app.id === appId ? { ...app, status: newStatus } : app)
+    setApplications(optimistic)
     setShowMoveModal(false)
     setEditingApp(null)
+
+    try {
+      const payload = mapClientToServer({ ...appToUpdate, status: newStatus })
+      const res = await fetch(`${API_BASE}/applications/${appId}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          ...toAuthHeader(),
+        },
+        body: JSON.stringify(payload as any),
+      })
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}))
+        console.warn(data?.message ?? 'Move update failed')
+      }
+    } catch (err) {
+      console.error(err)
+    }
   }
 
   const deleteApplication = async (appId: string) => {
@@ -243,14 +299,15 @@ export default function App({ onLogout }: AppProps) {
       const res = await fetch(`${API_BASE}/applications/${appId}`, {
         method: 'DELETE',
         headers: {
-          ...(localStorage.getItem('token') ? { Authorization: `Bearer ${localStorage.getItem('token')}` } : {}),
+          ...toAuthHeader(),
         },
       })
-      if (!res.ok) {
+      if (res.ok) {
+        setApplications(prevApplications => prevApplications.filter((app) => app.id !== appId))
+      } else {
         const data = await res.json().catch(() => ({}))
-        throw new Error(data?.message ?? 'Delete failed')
+        alert((data as any)?.message ?? 'Delete not available')
       }
-      setApplications(prevApplications => prevApplications.filter((app) => app.id !== appId))
     } catch (err) {
       console.error(err)
       alert((err as Error).message)
@@ -310,6 +367,9 @@ export default function App({ onLogout }: AppProps) {
           </div>
         </div>
         <div className="flex items-center gap-4">
+          {isLoading && (
+            <span className="text-gray-400 text-sm">Loading...</span>
+          )}
           <button
             onClick={() => setShowModal(true)}
             className="bg-blue-600 hover:bg-blue-700 px-4 py-2 rounded-lg flex items-center gap-2"
@@ -317,8 +377,11 @@ export default function App({ onLogout }: AppProps) {
             <Plus className="w-4 h-4" />
             Add Application
           </button>
-          <button 
-            onClick={onLogout}
+          <button
+            onClick={() => {
+              localStorage.removeItem('token')
+              onLogout()
+            }}
             className="text-gray-400 hover:text-white"
           >
             Logout

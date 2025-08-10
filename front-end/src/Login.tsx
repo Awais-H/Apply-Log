@@ -7,7 +7,7 @@ import SignUp from './SignUp'
 import { API_BASE } from './api'
 
 export default function Login() {
-  const [currentPage, setCurrentPage] = useState<'login' | 'signup' | 'app'>('login')
+  const [currentPage, setCurrentPage] = useState<'login' | 'signup' | 'app'>(localStorage.getItem('token') ? 'app' : 'login')
   const [formData, setFormData] = useState({
     email: "",
     password: "",
@@ -42,10 +42,16 @@ export default function Login() {
   }
 
   const handleSignUpSuccess = () => {
-    setCurrentPage('login')
+    // If signup returned a token, go straight to the app
+    if (localStorage.getItem('token')) {
+      setCurrentPage('app')
+    } else {
+      setCurrentPage('login')
+    }
   }
 
   const handleLogout = () => {
+    localStorage.removeItem('token')
     setCurrentPage('login')
     setFormData({ email: "", password: "" })
   }

@@ -66,11 +66,15 @@ export default function SignUp({ onSignUpSuccess, onBackToLogin }: SignUpProps) 
           lastName: formData.lastName,
           email: formData.email,
           password: formData.password,
+          cpassword: formData.confirmPassword,
         }),
       })
       const data = await res.json()
       if (!res.ok) {
         throw new Error(data?.message ?? 'Registration failed')
+      }
+      if (data?.token) {
+        localStorage.setItem('token', data.token)
       }
       onSignUpSuccess()
     } catch (err) {
