@@ -2,11 +2,12 @@ import express from 'express'
 import bcrypt from 'bcryptjs'
 import jwt from 'jsonwebtoken'
 import db from '../db.js'
+import prisma from 'prima/client'
 
 const router = express.Router()
 
 //Register new user endpoint /auth/register
-router.post('/register', (req, res) => {
+router.post('/register', async (req, res) => {
     const { firstName, lastName, email, password, cpassword } = req.body
 
     // Validate input
@@ -25,27 +26,27 @@ router.post('/register', (req, res) => {
     const hashedPassword = bcrypt.hashSync(password, 8)
     //Save new user and hashed password to db
     try {
-        const insertUser = db.prepare(`INSERT INTO users(firstName, lastName, email, password)
-            VALUES(?,?,?,?)`)
-        const result = insertUser.run(firstName, lastName, email, hashedPassword)
+        const user = await prisma.user.create({
+            data: {
+                username,
+                password: hashedPassword
+            }
+        })
 
         // Default application
         const defaultApp = 'Hello add your first application'
-        const insertApp = db.prepare(`INSERT INTO applications(userID,position,employment, company,salary,location,status,date)
-            VALUES(?,?,?,?,?,?,?,?)`)
-        insertApp.run(
-            result.lastInsertRowid, // userID
-            defaultApp,             // position
-            'full-time',            // employment
-            '',                     // company
-            0,                      // salary
-            '',                     // location
-            'applied',              // status
-            '2025-01-01'            // date
-        )
+        await prisma.App.create({
+            position: defaultApp,
+            company: '',
+            salary: 0,
+            location: '',
+            status: 'applied',
+            date: '2025-01-01',
+            userId: user.id,
+        })
 
         //Create token
-        const token = jwt.sign({ id: result.lastInsertRowid }, process.env.JWT_SECRET,
+        const token = jwt.sign({ id: user.id }, process.env.JWT_SECRET,
             { expiresIn: '24h' })
         res.json({ token })
     } catch (err) {
@@ -54,11 +55,15 @@ router.post('/register', (req, res) => {
     }
 })
 
-router.post('/login', (req, res) => {
+router.post('/login', async (req, res) => {
     const { email, password } = req.body;
     try {
-        const getUser = db.prepare(`SELECT * FROM users WHERE email = ?`)
-        const user = getUser.get(email)
+        const user = await prisma.findUnique({
+            where: {
+                username: username
+            }
+        })
+
         //If we cannot find user associated with that username
         if (!user) { return res.status(404).send({ message: "User not found" }) }
 
