@@ -29,7 +29,8 @@ model Application {
   location  String
   status    String
   date      String
-  userId    String
+  userId    Int
   user      User    @relation(fields: [userId], references: [id])
 
 }
+
