@@ -1,7 +1,6 @@
 import 'dotenv/config'
 import express from 'express'
-import path, { dirname } from 'path'
-import { fileURLToPath } from 'url'
+import cors from 'cors'
 import authRoutes from './routes/authRoutes.js'
 import appRoutes from './routes/applyRoutes.js'
 import authMiddleware from './middleware/authMiddleware.js'
@@ -9,17 +8,13 @@ import authMiddleware from './middleware/authMiddleware.js'
 const app = express();
 const PORT = process.env.PORT || 5000;
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = dirname(__filename);
+// Enable CORS for your frontend domain
+app.use(cors({
+    origin: process.env.FRONTEND_URL || 'http://localhost:5173', // Your frontend URL on Render
+    credentials: true
+}));
 
 app.use(express.json())
-// Serve Vite's dist folder
-app.use(express.static(path.join(__dirname, '..', '..', 'front-end', 'dist')));
-
-// SPA fallback
-app.get('/', (req, res) => {
-    res.sendFile(path.join(__dirname, '..', '..', 'front-end', 'dist', 'index.html'));
-});
 
 //Routes
 app.use('/auth', authRoutes)
