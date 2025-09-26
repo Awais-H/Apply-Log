@@ -1,7 +1,9 @@
 import express from 'express'
 import bcrypt from 'bcryptjs'
 import jwt from 'jsonwebtoken'
-import prisma from '@prisma/client'
+import { PrismaClient } from '../generated/prisma/index.js'
+
+const prisma = new PrismaClient()
 
 const router = express.Router()
 
@@ -27,21 +29,23 @@ router.post('/register', async (req, res) => {
     try {
         const user = await prisma.user.create({
             data: {
-                username,
+                username: email,
                 password: hashedPassword
             }
         })
 
         // Default application
         const defaultApp = 'Hello add your first application'
-        await prisma.App.create({
-            position: defaultApp,
-            company: '',
-            salary: 0,
-            location: '',
-            status: 'applied',
-            date: '2025-01-01',
-            userId: user.id,
+        await prisma.application.create({
+            data: {
+                position: defaultApp,
+                company: '',
+                salary: 0,
+                location: '',
+                status: 'applied',
+                date: '2025-01-01',
+                userId: user.id,
+            }
         })
 
         //Create token
@@ -57,9 +61,9 @@ router.post('/register', async (req, res) => {
 router.post('/login', async (req, res) => {
     const { email, password } = req.body;
     try {
-        const user = await prisma.findUnique({
+        const user = await prisma.user.findUnique({
             where: {
-                username: username
+                username: email
             }
         })
 
