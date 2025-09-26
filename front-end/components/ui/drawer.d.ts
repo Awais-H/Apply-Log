@@ -4,11 +4,11 @@ declare const Drawer: {
     ({ shouldScaleBackground, ...props }: React.ComponentProps<typeof DrawerPrimitive.Root>): import("react/jsx-runtime").JSX.Element;
     displayName: string;
 };
-declare const DrawerTrigger: React.ForwardRefExoticComponent<import("@radix-ui/react-dialog").DialogTriggerProps & React.RefAttributes<HTMLButtonElement>>;
+declare const DrawerTrigger: React.ComponentType<React.ComponentProps<typeof DrawerPrimitive.Trigger>>;
 declare const DrawerPortal: typeof import("vaul").Portal;
-declare const DrawerClose: React.ForwardRefExoticComponent<import("@radix-ui/react-dialog").DialogCloseProps & React.RefAttributes<HTMLButtonElement>>;
-declare const DrawerOverlay: React.ForwardRefExoticComponent<Omit<Omit<import("@radix-ui/react-dialog").DialogOverlayProps & React.RefAttributes<HTMLDivElement>, "ref"> & React.RefAttributes<HTMLDivElement>, "ref"> & React.RefAttributes<HTMLDivElement>>;
-declare const DrawerContent: React.ForwardRefExoticComponent<Omit<Omit<import("@radix-ui/react-dialog").DialogContentProps & React.RefAttributes<HTMLDivElement>, "ref"> & React.RefAttributes<HTMLDivElement>, "ref"> & React.RefAttributes<HTMLDivElement>>;
+declare const DrawerClose: React.ComponentType<React.ComponentProps<typeof DrawerPrimitive.Close>>;
+declare const DrawerOverlay: React.ForwardRefExoticComponent<React.ComponentPropsWithoutRef<typeof DrawerPrimitive.Overlay> & React.RefAttributes<React.ElementRef<typeof DrawerPrimitive.Overlay>>>;
+declare const DrawerContent: React.ForwardRefExoticComponent<React.ComponentPropsWithoutRef<typeof DrawerPrimitive.Content> & React.RefAttributes<React.ElementRef<typeof DrawerPrimitive.Content>>>;
 declare const DrawerHeader: {
     ({ className, ...props }: React.HTMLAttributes<HTMLDivElement>): import("react/jsx-runtime").JSX.Element;
     displayName: string;
@@ -17,6 +17,6 @@ declare const DrawerFooter: {
     ({ className, ...props }: React.HTMLAttributes<HTMLDivElement>): import("react/jsx-runtime").JSX.Element;
     displayName: string;
 };
-declare const DrawerTitle: React.ForwardRefExoticComponent<Omit<import("@radix-ui/react-dialog").DialogTitleProps & React.RefAttributes<HTMLHeadingElement>, "ref"> & React.RefAttributes<HTMLHeadingElement>>;
-declare const DrawerDescription: React.ForwardRefExoticComponent<Omit<import("@radix-ui/react-dialog").DialogDescriptionProps & React.RefAttributes<HTMLParagraphElement>, "ref"> & React.RefAttributes<HTMLParagraphElement>>;
+declare const DrawerTitle: React.ForwardRefExoticComponent<React.ComponentPropsWithoutRef<typeof DrawerPrimitive.Title> & React.RefAttributes<React.ElementRef<typeof DrawerPrimitive.Title>>>;
+declare const DrawerDescription: React.ForwardRefExoticComponent<React.ComponentPropsWithoutRef<typeof DrawerPrimitive.Description> & React.RefAttributes<React.ElementRef<typeof DrawerPrimitive.Description>>>;
 export { Drawer, DrawerPortal, DrawerOverlay, DrawerTrigger, DrawerClose, DrawerContent, DrawerHeader, DrawerFooter, DrawerTitle, DrawerDescription, };
