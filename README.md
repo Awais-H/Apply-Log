@@ -16,7 +16,7 @@ A comprehensive job application tracking system that helps you manage your job s
 
 **Frontend:** React 18 with TypeScript, Vite, Tailwind CSS, Radix UI
 
-**Backend:** Node.js, Express.js 5, Prisma ORM, PostgreSQL
+**Backend:** Express.js, Express.js 5, Prisma ORM, PostgreSQL
 
 **Authentication:** JWT tokens with bcryptjs password hashing
 
