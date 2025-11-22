@@ -1,6 +1,6 @@
 # Apply Log
 
-A comprehensive job application tracking system that helps you manage your job search process. Track applications through different stages (Applied, Interview, Offer, Rejected) with an intuitive Kanban-style interface.
+A comprehensive job application tracking system that helps you manage your job search process. Track applications through different stages (Applied, Interview, Offer, Rejected).
 <img width="1916" height="890" alt="Screenshot 2025-08-07 211221" src="https://github.com/user-attachments/assets/488dcbc3-4b99-4832-88de-db350af33d44" />
 
 ## ✨ Features
